@@ -23,7 +23,13 @@ type FuncSymb = String
 
 type Signature = [(FuncSymb, Int)]
 
-data Term v = TermVar v | TermFunc FuncSymb [Term v]
+data Term v = TermVar v | TermFunc FuncSymb [Term v] deriving (Eq)
+instance Show v => Show (Term v) where
+    show (TermVar v) = show v
+    show (TermFunc f ts) = show f ++ "(" ++ args ++ ")"
+                where
+                    tsStr = show ts
+                    args = drop 1 (take (length tsStr -1) tsStr)
 
 varToTerm :: Var -> Term Var
 varToTerm v = TermVar v
@@ -56,3 +62,4 @@ identity = []
 
 terme0 = TermVar "x"
 terme1 = TermFunc "f" [TermFunc "g" [TermVar "x"], TermVar "y"]
+subs1 = [("x", TermFunc "g" [TermVar "y"]), ("y", TermVar "x")]
