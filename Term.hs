@@ -14,7 +14,7 @@ module Term (
     Substitution,
     identity,
     (*!),
-    -- (@@)
+    (@@)
 ) where
 
 type Var = String
@@ -50,9 +50,13 @@ identity = []
                                         else (TermVar v) *! ss
 (*!) (TermFunc f ts) s = TermFunc f (map (\x -> x *! s) ts)
 
--- (@@)
+(@@) :: Eq v => Substitution v -> Substitution v -> Substitution v
+(@@) s t = map (\c -> (fst c, snd c *! s)) t
 
 -- examples
 
 terme0 = TermVar "x"
 terme1 = TermFunc "f" [TermFunc "g" [TermVar "x"], TermVar "y"]
+
+sub1 = [("x", TermFunc "f" [TermVar "w", TermVar "x"]), ("y", TermVar "z")]
+sub2 = [("w", TermFunc "g" [TermVar "y"]), ("z", TermVar "c")]
