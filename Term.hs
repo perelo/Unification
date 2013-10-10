@@ -14,7 +14,7 @@ module Term (
     Substitution,
     identity,
     (*!),
-    -- (@@)
+    (@@)
 ) where
 
 type Var = String
@@ -24,6 +24,7 @@ type FuncSymb = String
 type Signature = [(FuncSymb, Int)]
 
 data Term v = TermVar v | TermFunc FuncSymb [Term v] deriving (Eq)
+
 instance Show v => Show (Term v) where
     show (TermVar v) = show v
     show (TermFunc f ts) = show f ++ "(" ++ args ++ ")"
@@ -56,10 +57,13 @@ identity = []
                                         else (TermVar v) *! ss
 (*!) (TermFunc f ts) s = TermFunc f (map (\x -> x *! s) ts)
 
--- (@@)
+(@@) :: Eq v => Substitution v -> Substitution v -> Substitution v
+(@@) s t = map (\c -> (fst c, snd c *! s)) t
 
 -- examples
 
 terme0 = TermVar "x"
 terme1 = TermFunc "f" [TermFunc "g" [TermVar "x"], TermVar "y"]
-subs1 = [("x", TermFunc "g" [TermVar "y"]), ("y", TermVar "x")]
+
+sub1 = [("x", TermFunc "f" [TermVar "w", TermVar "x"]), ("y", TermVar "z")]
+sub2 = [("w", TermFunc "g" [TermVar "y"]), ("z", TermVar "c")]
