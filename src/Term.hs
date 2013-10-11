@@ -58,7 +58,15 @@ identity = []
 (*!) (TermFunc f ts) s = TermFunc f (map (\x -> x *! s) ts)
 
 (@@) :: Eq v => Substitution v f -> Substitution v f -> Substitution v f
-(@@) s t = map (\c -> (fst c, snd c *! s)) t
+(@@) s t = s1 ++ s2
+    where
+    s0 = map (\x -> (fst x, snd x *! t)) s          -- t applied to s's terms
+    s1 = filter isVarNotTheTerm s0                  -- s0's synonyms removed
+    sVars = map fst s                               -- variables of s
+    s2 = filter (\x -> not (fst x `elem` sVars)) t  -- remove t elems from which
+                                                    -- the fst is in s variables
+    isVarNotTheTerm (u, TermVar v) = u /= v
+    isVarNotTheTerm _              = True
 
 -- examples
 
@@ -67,3 +75,6 @@ terme1 = TermFunc "f" [TermFunc "g" [TermVar "x"], TermVar "y"]
 
 sub1 = [("x", TermFunc "f" [TermVar "w", TermVar "x"]), ("y", TermVar "z")]
 sub2 = [("w", TermFunc "g" [TermVar "y"]), ("z", TermVar "c")]
+
+theta  = [("x", TermFunc "f" [TermVar "y"]), ("y", TermVar "z")]
+lambda = [("x", TermVar "a"), ("y", TermVar "b"), ("z", TermVar "y")]
