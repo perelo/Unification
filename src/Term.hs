@@ -32,10 +32,10 @@ instance (Show v, Show f) => Show (Term v f) where
                     tsStr = show ts
                     args = drop 1 (take (length tsStr -1) tsStr)
 
-varToTerm :: Var -> Term Var f
+varToTerm :: v -> Term v f
 varToTerm v = TermVar v
 
-constructTerm :: FuncSymb -> [Term v FuncSymb] -> Term v FuncSymb
+constructTerm :: f -> [Term v f] -> Term v f
 constructTerm f ts = TermFunc f ts
 
 variables :: Term v f -> [v]
