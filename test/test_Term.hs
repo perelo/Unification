@@ -7,7 +7,7 @@ import Test.QuickCheck.Gen
 import Test.QuickCheck.Arbitrary
 
 instance (Arbitrary v, Arbitrary f) => Arbitrary (Term v f) where
-    arbitrary = oneof [arbitraryTermVar, arbitraryTermFunc]
+    arbitrary = arbitraryTerm
 
 arbitraryTerm :: (Arbitrary v, Arbitrary f) => Gen (Term v f)
 arbitraryTerm = oneof [arbitraryTermVar, arbitraryTermFunc]
@@ -32,3 +32,18 @@ arbitraryTerms gn = gn >>= (\x -> arbitraryTerms' x)
                             x <- arbitrary
                             xs <- arbitraryTerms' (n-1)
                             return (x:xs)
+
+-- TSubstitution just encapsulates Substitution in a new type so we can
+-- define how they are arbitrary generated
+data TSubstitution v f = TSubstitution (Substitution v f) deriving (Eq, Show)
+
+instance (Arbitrary v, Arbitrary f, Eq v) => Arbitrary (TSubstitution v f) where
+    arbitrary = do
+                s <- arbitrary
+                return $ TSubstitution (cleanSubstitution s)
+
+-- cleanSubstitution removes from the substitition couples like (x, TermVar )
+-- TODO it must also removes fst duplicates
+--      ie remove one of theses [(x, TermVar y), (x, TermVar z)]
+cleanSubstitution :: Eq v => Substitution v f -> Substitution v f
+cleanSubstitution ss = filter (not.(uncurry compareVar)) ss
