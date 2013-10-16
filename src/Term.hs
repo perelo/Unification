@@ -74,20 +74,24 @@ identity = []
     isVarNotTheTerm (u, TermVar v) = u /= v
     isVarNotTheTerm _              = True
 
-unif :: Eq v => [(Term v f, Term v f)] -> Maybe (Substitution v f)
+unif :: (Eq v, Eq f) => [(Term v f, Term v f)] -> Maybe (Substitution v f)
 unif [] = Just identity
 unif ((TermVar v1, TermVar v2):ps) = unif ps
-unif ((s@(TermVar v1), t@(TermFunc v2 ts)):ps) =
-  if v1 `elem` (variables t) then Nothing
-  else let newSub = [(v1, t)]
-           nextPs = map (\c -> ((fst c) *! newSub, (snd c) *! newSub)) ps
-           jtau = unif nextPs
-       in if isNothing jtau then Nothing
-          else do
-               tau <- jtau
-               return (tau @@ newSub)
+unif ((s@(TermVar v1), t@(TermFunc _ _)):ps) =
+      if v1 `elem` (variables t) then Nothing
+      else let newSub = [(v1, t)]
+               nextPs = map (\c -> ((fst c) *! newSub, (snd c) *! newSub)) ps
+               jtau = unif nextPs
+           in if isNothing jtau then Nothing
+              else do
+                   tau <- jtau
+                   return (tau @@ newSub)
 unif ((s@(TermFunc _ _), t@(TermVar _)):ps) = unif ((t,s):ps)
---unif ((s@(TermFunc v f), t@(TermFunc v f)):ps) = TODO
+unif ((s@(TermFunc _ ts1), t@(TermFunc _ ts2)):ps) =
+      let sSig = sig s !! 0
+          tSig = sig t !! 0
+      in if sSig /= tSig then Nothing
+         else unif (zip ts1 ts2 ++ ps)
 
 -- examples
 
@@ -99,3 +103,10 @@ sub2 = [("w", TermFunc "g" [TermVar "y"]), ("z", TermVar "c")]
 
 theta  = [("x", TermFunc "f" [TermVar "y"]), ("y", TermVar "z")]
 lambda = [("x", TermVar "a"), ("y", TermVar "b"), ("z", TermVar "y")]
+
+fxgz = TermFunc "f" [TermVar "x", TermFunc "g" [TermVar "z"]]
+fgzx = TermFunc "f" [TermFunc "g" [TermVar "z"], TermVar "x"]
+
+pb1 = [(TermFunc "f" [TermVar "x", TermFunc "g" [TermVar "z"]],
+        TermFunc "f" [TermFunc "g" [TermVar "z"], TermVar "x"]),
+       (TermVar "x", TermFunc "g" [TermVar "z"])]
