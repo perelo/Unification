@@ -17,6 +17,8 @@ module Term (
     (@@)
 ) where
 
+import Data.Maybe
+
 type Var = String
 
 type FuncSymb = String
@@ -46,6 +48,10 @@ sig :: Term v f -> Signature f
 sig (TermVar _) = []
 sig (TermFunc f ts) = (f, length ts):concat (map sig ts)
 
+args :: Term v f -> [Term v f]
+args (TermFunc _ ts) = ts
+args _ = []
+
 type Substitution v f = [(v, Term v f)]
 
 identity :: Substitution v f
@@ -67,6 +73,21 @@ identity = []
                                                     -- the fst is in s variables
     isVarNotTheTerm (u, TermVar v) = u /= v
     isVarNotTheTerm _              = True
+
+unif :: Eq v => [(Term v f, Term v f)] -> Maybe (Substitution v f)
+unif [] = Just identity
+unif ((TermVar v1, TermVar v2):ps) = unif ps
+unif ((s@(TermVar v1), t@(TermFunc v2 ts)):ps) =
+  if v1 `elem` (variables t) then Nothing
+  else let newSub = [(v1, t)]
+           nextPs = map (\c -> ((fst c) *! newSub, (snd c) *! newSub)) ps
+           jtau = unif nextPs
+       in if isNothing jtau then Nothing
+          else do
+               tau <- jtau
+               return (tau @@ newSub)
+unif ((s@(TermFunc _ _), t@(TermVar _)):ps) = unif ((t,s):ps)
+--unif ((s@(TermFunc v f), t@(TermFunc v f)):ps) = TODO
 
 -- examples
 
