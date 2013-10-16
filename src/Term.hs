@@ -9,12 +9,15 @@ module Term (
     Term,
     varToTerm,
     constructTerm,
+    compareVar,
     variables,
     sig,
     Substitution,
     identity,
     (*!),
-    (@@)
+    (@@),
+    UnifProblem,
+    unif
 ) where
 
 import Data.Maybe
@@ -40,6 +43,12 @@ varToTerm v = TermVar v
 constructTerm :: f -> [Term v f] -> Term v f
 constructTerm f ts = TermFunc f ts
 
+-- compareVar returns True if the Term given in second argument is
+-- a TermVar of the first argument, False otherwise
+compareVar :: Eq v => v -> Term v f -> Bool
+compareVar x (TermVar y) = x == y
+compareVar _ _ = False
+
 variables :: Term v f -> [v]
 variables (TermVar v) = [v]
 variables (TermFunc f ts) = concat (map variables ts)
@@ -47,10 +56,6 @@ variables (TermFunc f ts) = concat (map variables ts)
 sig :: Term v f -> Signature f
 sig (TermVar _) = []
 sig (TermFunc f ts) = (f, length ts):concat (map sig ts)
-
-args :: Term v f -> [Term v f]
-args (TermFunc _ ts) = ts
-args _ = []
 
 type Substitution v f = [(v, Term v f)]
 
@@ -67,14 +72,14 @@ identity = []
 (@@) s t = s1 ++ s2
     where
     s0 = map (\x -> (fst x, snd x *! t)) s          -- t applied to s's terms
-    s1 = filter isVarNotTheTerm s0                  -- s0's synonyms removed
+    s1 = filter (not.(uncurry compareVar)) s0       -- s0's synonyms removed
     sVars = map fst s                               -- variables of s
     s2 = filter (\x -> not (fst x `elem` sVars)) t  -- remove t elems from which
                                                     -- the fst is in s variables
-    isVarNotTheTerm (u, TermVar v) = u /= v
-    isVarNotTheTerm _              = True
 
-unif :: (Eq v, Eq f) => [(Term v f, Term v f)] -> Maybe (Substitution v f)
+type UnifProblem v f = [(Term v f, Term v f)]
+
+unif :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
 unif [] = Just identity
 unif ((TermVar v1, TermVar v2):ps) = unif ps
 unif ((s@(TermVar v1), t@(TermFunc _ _)):ps) =
