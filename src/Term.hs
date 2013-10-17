@@ -71,18 +71,24 @@ identity = []
 (@@) :: Eq v => Substitution v f -> Substitution v f -> Substitution v f
 (@@) s t = s1 ++ s2
     where
-    s0 = map (\x -> (fst x, snd x *! t)) s          -- t applied to s's terms
-    s1 = filter (not.(uncurry compareVar)) s0       -- s0's synonyms removed
-    sVars = map fst s                               -- variables of s
-    s2 = filter (\x -> not (fst x `elem` sVars)) t  -- remove t elems from which
-                                                    -- the fst is in s variables
+    s0 = map (\(var,term) -> (var, term *! s)) t     -- s applied to t's terms
+    s1 = filter (not.(uncurry compareVar)) s0        -- s0's synonyms removed
+    tVars = map fst t                                -- variables of s
+    s2 = filter (\(var,_) -> not (elem var tVars)) s -- remove s elems from which
+                                                     -- the fst is in t variables
 
 type UnifProblem v f = [(Term v f, Term v f)]
 
 unif :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
 unif [] = Just identity
-unif ((TermVar v1, TermVar v2):ps) = unif ps
-unif ((s@(TermVar v1), t@(TermFunc _ _)):ps) =
+unif ((s@(TermFunc _ ts1), t@(TermFunc _ ts2)):ps) =
+      let sSig = sig s !! 0
+          tSig = sig t !! 0
+      in if sSig /= tSig then Nothing
+         else unif (zip ts1 ts2 ++ ps)
+unif ((s@(TermVar v1), t):ps) =
+    if compareVar v1 t then unif ps
+    else
       if v1 `elem` (variables t) then Nothing
       else let newSub = [(v1, t)]
                nextPs = map (\c -> ((fst c) *! newSub, (snd c) *! newSub)) ps
@@ -91,27 +97,5 @@ unif ((s@(TermVar v1), t@(TermFunc _ _)):ps) =
               else do
                    tau <- jtau
                    return (tau @@ newSub)
-unif ((s@(TermFunc _ _), t@(TermVar _)):ps) = unif ((t,s):ps)
-unif ((s@(TermFunc _ ts1), t@(TermFunc _ ts2)):ps) =
-      let sSig = sig s !! 0
-          tSig = sig t !! 0
-      in if sSig /= tSig then Nothing
-         else unif (zip ts1 ts2 ++ ps)
+unif ((s@(TermFunc _ _), t):ps) = unif ((t,s):ps)
 
--- examples
-
-terme0 = TermVar "x"
-terme1 = TermFunc "f" [TermFunc "g" [TermVar "x"], TermVar "y"]
-
-sub1 = [("x", TermFunc "f" [TermVar "w", TermVar "x"]), ("y", TermVar "z")]
-sub2 = [("w", TermFunc "g" [TermVar "y"]), ("z", TermVar "c")]
-
-theta  = [("x", TermFunc "f" [TermVar "y"]), ("y", TermVar "z")]
-lambda = [("x", TermVar "a"), ("y", TermVar "b"), ("z", TermVar "y")]
-
-fxgz = TermFunc "f" [TermVar "x", TermFunc "g" [TermVar "z"]]
-fgzx = TermFunc "f" [TermFunc "g" [TermVar "z"], TermVar "x"]
-
-pb1 = [(TermFunc "f" [TermVar "x", TermFunc "g" [TermVar "z"]],
-        TermFunc "f" [TermFunc "g" [TermVar "z"], TermVar "x"]),
-       (TermVar "x", TermFunc "g" [TermVar "z"])]
