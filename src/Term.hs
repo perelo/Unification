@@ -87,17 +87,15 @@ unif ((s@(TermFunc _ ts1), t@(TermFunc _ ts2)):ps) =
       let sSig = sig s !! 0
           tSig = sig t !! 0
       in if sSig /= tSig then Nothing
-         else unif (zip ts1 ts2 ++ ps)
-unif ((s@(TermVar v1), t):ps) =
-    if compareVar v1 t then unif ps
+                         else unif (zip ts1 ts2 ++ ps)
+unif ((s@(TermVar v), t):ps) =
+    if compareVar v t then unif ps
     else
-      if v1 `elem` (variables t) then Nothing
-      else let newSub = [(v1, t)]
-               nextPs = map (\c -> ((fst c) *! newSub, (snd c) *! newSub)) ps
-               jtau = unif nextPs
-           in if isNothing jtau then Nothing
-              else do
-                   tau <- jtau
-                   return (tau @@ newSub)
+      if v `elem` (variables t) || isNothing maybeTau then Nothing
+      else return $ fromJust maybeTau @@ newSub
+           where
+             newSub = [(v, t)]
+             nextPs = map (\(var,term) -> (var *! newSub, term *! newSub)) ps
+             maybeTau = unif nextPs
 unif ((s@(TermFunc _ _), t):ps) = unif ((t,s):ps)
 
