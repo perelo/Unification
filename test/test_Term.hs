@@ -36,18 +36,19 @@ arbitraryTerms gn = gn >>= (\x -> arbitraryTerms' x)
 
 -- TSubstitution just encapsulates Substitution in a new type so we can
 -- define how they are arbitrary generated
-data TSubstitution v f = TSubstitution (Substitution v f) deriving (Eq, Show)
+data TSubstitution v f = TSubstitution (Substitution v f) deriving (Show)
 
 instance (Arbitrary v, Arbitrary f, Eq v) => Arbitrary (TSubstitution v f) where
     arbitrary = do
                 s <- arbitrary
                 return $ TSubstitution (cleanSubstitution s)
 
--- cleanSubstitution removes from the substitition couples like (x, TermVar )
--- TODO it must also removes fst duplicates
---      ie remove one of theses [(x, TermVar y), (x, TermVar z)]
+-- cleanSubstitution removes from the substitition couples like (x, TermVar x)
+-- it also removes fst duplicates
+--      ie remove the second elem of [(x, TermVar y), (x, TermVar z)]
 cleanSubstitution :: Eq v => Substitution v f -> Substitution v f
-cleanSubstitution ss = filter (not.(uncurry compareVar)) ss
+cleanSubstitution ss = let s0 = filter (not.(uncurry compareVar)) ss
+                        in map (\(v,t) -> (v, fromJust (lookup v s0))) s0
 
 -- printArbitrary :: Gen (Term Char Char) -> IO()
 -- printArbitrary :: Gen (TSubstitution Char Char) -> IO()
@@ -55,23 +56,30 @@ cleanSubstitution ss = filter (not.(uncurry compareVar)) ss
 --                     s <- newStdGen
 --                     print $ unGen a s 100
 
-testApplicationIdentity :: (Eq v, Eq f) => Term v f -> Bool
-testApplicationIdentity t = t *! identity == t
+testApplicationId :: (Eq v, Eq f) => Term v f -> Bool
+testApplicationId t = t *! identity == t
 
-testCompositionIdentity
+testComposId
   :: (Eq v, Eq f) => TSubstitution v f -> Bool
-testCompositionIdentity (TSubstitution s) = s @@ identity == s &&
-                                            s == identity @@ s
+testComposId (TSubstitution s) = s @@ identity == s &&
+                                 s == identity @@ s
 
-testCompositionAssociativeness
-  :: (Eq v, Eq f) =>
+testComposAssoc
+  :: (Ord v, Ord f) =>
      TSubstitution v f -> TSubstitution v f -> TSubstitution v f -> Bool
-testCompositionAssociativeness (TSubstitution s)
-                               (TSubstitution t)
-                               (TSubstitution u) = (s @@ t) @@ u == s @@ (t @@ u)
+testComposAssoc (TSubstitution rho) (TSubstitution sigma) (TSubstitution tau) =
+                (rho @@  sigma) @@ tau == rho @@ (sigma  @@ tau)
 
-testUnif :: UnifProblem Char Char -> Bool
-testUnif ps = let maybeU = unif ps
-              in if isNothing maybeU then False
-                 else let u = fromJust maybeU
-                      in null $ filter (\c -> fst c *! u /= snd c *! u) ps
+testComposDef
+  :: (Eq v, Eq f) =>
+     (Term v f) -> (TSubstitution v f) -> (TSubstitution v f) -> Bool
+testComposDef t (TSubstitution sigma) (TSubstitution tau) =
+                (t *! sigma) *! tau == t *! (tau @@ sigma)
+
+testUnif :: (Eq a, Eq b) => UnifProblem a b -> Bool
+testUnif ps = isNothing maybeU ||
+              null (filter (\(var,term) -> var *! u /= term *! u) ps)
+                where
+                  maybeU = unif ps
+                  u = fromJust maybeU
+
