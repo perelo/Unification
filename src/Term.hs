@@ -64,18 +64,20 @@ identity = []
 
 (*!) :: Eq v => Term v f -> Substitution v f -> Term v f
 (*!) t [] = t
-(*!) (TermVar v) (s:ss) = if fst s == v then snd s
-                                        else (TermVar v) *! ss
-(*!) (TermFunc f ts) s = TermFunc f (map (\x -> x *! s) ts)
+(*!) t@(TermVar tvar) ((svar,sterm):ss) = if svar == tvar then sterm
+                                                          else t *! ss
+(*!) (TermFunc f ts) s = constructTerm f (map (\t -> t *! s) ts)
 
 (@@) :: Eq v => Substitution v f -> Substitution v f -> Substitution v f
-(@@) s t = s1 ++ s2
-    where
-    s0 = map (\(var,term) -> (var, term *! s)) t     -- s applied to t's terms
-    s1 = filter (not.(uncurry compareVar)) s0        -- s0's synonyms removed
-    tVars = map fst t                                -- variables of s
-    s2 = filter (\(var,_) -> not (elem var tVars)) s -- remove s elems from which
-                                                     -- the fst is in t variables
+(@@) sigma tau = s1 ++ s2
+  where
+    -- apply sigma to all terms of tau
+    s0 = map (\(var,term) -> (var, term *! sigma)) tau
+    -- remove couples where the var is the term
+    s1 = filter (not.(uncurry compareVar)) s0
+    -- remove from sigma couples where the var is in the vars of tau
+    tauVars = map fst tau
+    s2 = filter (\(var,_) -> not (elem var tauVars)) sigma
 
 type UnifProblem v f = [(Term v f, Term v f)]
 
