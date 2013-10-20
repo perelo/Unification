@@ -50,31 +50,34 @@ testFailUnif ps = not (hasNoUnifier ps) || isNothing maybeU
                       maybeU = unify ps
                       hasNoUnifier ps = or (map (\x -> isNothing (unify [x])) ps)
 
+args1 = stdArgs { maxSuccess = 2000, maxSize = 100 }
+args2 = stdArgs { maxSuccess = 200,  maxSize = 100 }
 
 main = do
         putStrLn $ "Testing (term *! identity == identity)"
-        quickCheck (testApplicationId   :: Term Char Char -> Bool)
+        quickCheckWith args1 (testApplicationId   :: Term Var FuncSymb -> Bool)
 
         putStrLn $ "Testing (sigma @@ identity == sigma == identity @@ sigma)"
-        quickCheck (testComposId        :: TSubstitution Char Char -> Bool)
+        quickCheckWith args2 (testComposId        :: TSubstitution Var FuncSymb -> Bool)
 
         putStrLn $ "Testing ((rho @@ sigma) @@ tau == rho @@ (sigma @@ tau))"
-        quickCheck (testComposAssoc     :: TSubstitution Char Char ->
-                                           TSubstitution Char Char ->
-                                           TSubstitution Char Char -> Bool)
+        quickCheckWith args2 (testComposAssoc     :: TSubstitution Var FuncSymb ->
+                                           TSubstitution Var FuncSymb ->
+                                           TSubstitution Var FuncSymb -> Bool)
 
         putStrLn $ "Testing ((t *! sigma) *! tau == t *! (sigma @@ tau))"
-        quickCheck (testComposDef       :: Term Char Char ->
-                                           TSubstitution Char Char ->
-                                           TSubstitution Char Char -> Bool)
+        quickCheckWith args1 (testComposDef       :: Term Var FuncSymb ->
+                                           TSubstitution Var FuncSymb ->
+                                           TSubstitution Var FuncSymb -> Bool)
 
         putStrLn $ "Testing (sigma @@ sigma == sigma) for sigma an unifier"
-        quickCheck (testUnifIdempotence :: UnifProblem Char Char -> Bool)
+        quickCheckWith args1 (testUnifIdempotence :: UnifProblem Var FuncSymb -> Bool)
 
         putStr   $ "Testing (si *! sigma == ti *! sigma) "
         putStrLn $ "for sigma = unify ((s1,t1),...,(sn,tn)) and 1 <= i <= n"
-        quickCheck (testUnif            :: UnifProblem Char Char -> Bool)
+        quickCheckWith args1 (testUnif            :: UnifProblem Var FuncSymb -> Bool)
 
         putStr   $ "Testing unify ((s1,t1),...,(sn,tn)) = ø "
         putStrLn $ "for an i such as unif ((si,ti)) = ø"
-        quickCheck (testFailUnif        :: UnifProblem Char Char -> Bool)
+        quickCheckWith args1 (testFailUnif        :: UnifProblem Var FuncSymb -> Bool)
+
