@@ -2,6 +2,8 @@
 -- @Author p1002650
 -- @Date 17-10-2013
 
+module Main (main) where
+
 import Term
 
 -- examples
@@ -37,5 +39,15 @@ pb3 = [(constructTerm "f" [varToTerm "y",
                            constructTerm "k" [varToTerm "y"],
                            varToTerm "y"])]
 
-main = putStrLn $ show (unif pb3)
+pbs = [pb0, pb1, pb2, pb3]
+unifs = map unif pbs
+z = zip pbs unifs
+
+main = printPbs z
+  where
+    printPbs [] = return ()
+    printPbs ((pb,unifier):z) = do
+        putStrLn $ "The unifier of " ++ show pb ++ " is "
+        putStrLn $ "\t" ++ show unifier ++ "\n"
+        printPbs z
 

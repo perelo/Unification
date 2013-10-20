@@ -2,6 +2,8 @@
 -- @Author Eloi PERDEREAU
 -- @Date 10-10-2013
 
+module Main (main) where
+
 import Term
 import ArbitraryTerm
 import Data.Maybe
@@ -48,7 +50,7 @@ testFailUnif ps = not (hasNoUnifier ps) || isNothing maybeU
                       maybeU = unif ps
                       hasNoUnifier ps = or (map (\x -> isNothing (unif [x])) ps)
 
-mainTest = do
+main = do
         putStrLn $ "Testing (term *! identity == identity)"
         quickCheck (testApplicationId   :: Term Char Char -> Bool)
 
