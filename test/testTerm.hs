@@ -15,7 +15,7 @@ testComposId (TSubstitution s) = s @@ identity == s &&
                                  s == identity @@ s
 
 testComposAssoc
-  :: (Ord v, Ord f) =>
+  :: (Eq v, Eq f) =>
      TSubstitution v f -> TSubstitution v f -> TSubstitution v f -> Bool
 testComposAssoc (TSubstitution rho) (TSubstitution sigma) (TSubstitution tau) =
                 (rho @@  sigma) @@ tau == rho @@ (sigma  @@ tau)
