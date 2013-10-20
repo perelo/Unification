@@ -1,18 +1,24 @@
-all: test
+all: quick
 
 SRCS_DIR=src/
 TEST_DIR=test/
 INC=-i$(SRCS_DIR) -i$(TEST_DIR)
 
 SRC=$(SRCS_DIR)Term.hs
-TST=$(TEST_DIR)ArbitraryTerm.hs \
-    $(TEST_DIR)testTerm.hs
+
+QCT=$(TEST_DIR)ArbitraryTerm.hs \
+    $(TEST_DIR)quickCheckTerm.hs
+HCT=$(TEST_DIR)handCheckTerm.hs
 
 OSRC=$(SRC:.hs=.o)
-OTST=$(TST:.hs=.o)
+OQCT=$(QCT:.hs=.o)
+OHCT=$(HCT:.hs=.o)
 
-test: $(OSRC) $(OTST)
-	ghc $(INC) --make test/testTerm -o testTerm.run
+quick: $(OSRC) $(OQCT)
+	ghc $(INC) --make test/quickCheckTerm.hs -o quickCheckTerm.run
+
+hand: $(OSRC) $(OHCT)
+	ghc $(INC) --make test/handCheckTerm -o handCheckTerm.run
 
 %.o: %.hs
 	ghc $(INC) -c $<
