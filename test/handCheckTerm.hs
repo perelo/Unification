@@ -40,7 +40,7 @@ pb3 = [(constructTerm "f" [varToTerm "y",
                            varToTerm "y"])]
 
 pbs = [pb0, pb1, pb2, pb3]
-unifs = map unif pbs
+unifs = map unify pbs
 z = zip pbs unifs
 
 main = printPbs z

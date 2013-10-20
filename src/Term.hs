@@ -17,8 +17,8 @@ module Term (
     (*!),
     (@@),
     UnifProblem,
-    unif,
-    unify
+    unify,
+    unifyBis
 ) where
 
 import Data.Maybe
@@ -82,43 +82,43 @@ identity = []
 
 type UnifProblem v f = [(Term v f, Term v f)]
 
-unif :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
-unif [] = Just identity
-unif ((s@(TermFunc _ ts1), t@(TermFunc _ ts2)):ps) =
+unify :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
+unify [] = Just identity
+unify ((s@(TermFunc _ ts1), t@(TermFunc _ ts2)):ps) =
       let sSig = sig s !! 0
           tSig = sig t !! 0
       in if sSig /= tSig then Nothing
-                         else unif (zip ts1 ts2 ++ ps)
-unif ((s@(TermVar v), t):ps) =
-    if compareVar v t then unif ps
+                         else unify (zip ts1 ts2 ++ ps)
+unify ((s@(TermVar v), t):ps) =
+    if compareVar v t then unify ps
     else
-      if v `elem` (variables t) || isNothing maybeTau then Nothing
+      if elem v (variables t) || isNothing maybeTau then Nothing
       else return $ fromJust maybeTau @@ newSub
            where
              newSub = [(v, t)]
              nextPs = map (\(var,term) -> (var *! newSub, term *! newSub)) ps
-             maybeTau = unif nextPs
-unif ((s, t@(TermVar _)):ps) = unif ((t,s):ps)
+             maybeTau = unify nextPs
+unify ((s, t@(TermVar _)):ps) = unify ((t,s):ps)
 
 -- decomposed
 
-unify :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
-unify [] = Just identity
-unify ps = if or (map isFailCase ps) then Nothing else unify' ps
+unifyBis :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
+unifyBis [] = Just identity
+unifyBis ps = if or (map isFailCase ps) then Nothing else unifyBis' ps
              where
                pps = filter (\(TermVar v, t) -> not (compareVar v t)) ps
 
-unify' :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
-unify' [] = Just identity
-unify' ((TermFunc _ ts1, TermFunc _ ts2):ps) = unify' (zip ts1 ts2 ++ ps)
-unify' ((s@(TermVar v), t):ps) =
+unifyBis' :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
+unifyBis' [] = Just identity
+unifyBis' ((TermFunc _ ts1, TermFunc _ ts2):ps) = unifyBis' (zip ts1 ts2 ++ ps)
+unifyBis' ((s@(TermVar v), t):ps) =
       if isNothing maybeTau then Nothing
       else return $ fromJust maybeTau @@ newSub
            where
              newSub = [(v, t)]
              nextPs = map (\(var,term) -> (var *! newSub, term *! newSub)) ps
-             maybeTau = unify' nextPs
-unify' ((s, t@(TermVar _)):ps) = unify' ((t,s):ps)
+             maybeTau = unifyBis' nextPs
+unifyBis' ((s, t@(TermVar _)):ps) = unifyBis' ((t,s):ps)
 
 isFailCase (s@(TermFunc _ _), t@(TermFunc _ _)) = (sig s !! 0) /= (sig t !! 0)
 isFailCase (TermVar v, t)                       = not (compareVar v t) &&

@@ -6,8 +6,8 @@ module Main (main) where
 
 import Term
 import ArbitraryTerm
-import Data.Maybe
 
+import Data.Maybe
 import Test.QuickCheck
 
 testApplicationId :: (Eq v, Eq f) => Term v f -> Bool
@@ -34,21 +34,22 @@ testUnifIdempotence :: (Eq a, Eq b) => UnifProblem a b -> Bool
 testUnifIdempotence ps = isNothing maybeU ||
                      u @@ u == u
                        where
-                         maybeU = unif ps
+                         maybeU = unify ps
                          u = fromJust maybeU
 
 testUnif :: (Eq a, Eq b) => UnifProblem a b -> Bool
 testUnif ps = isNothing maybeU ||
               null (filter (\(var,term) -> var *! u /= term *! u) ps)
                 where
-                  maybeU = unif ps
+                  maybeU = unify ps
                   u = fromJust maybeU
 
 testFailUnif :: (Eq a, Eq b) => UnifProblem a b -> Bool
 testFailUnif ps = not (hasNoUnifier ps) || isNothing maybeU
                     where
-                      maybeU = unif ps
-                      hasNoUnifier ps = or (map (\x -> isNothing (unif [x])) ps)
+                      maybeU = unify ps
+                      hasNoUnifier ps = or (map (\x -> isNothing (unify [x])) ps)
+
 
 main = do
         putStrLn $ "Testing (term *! identity == identity)"
