@@ -97,5 +97,5 @@ unif ((s@(TermVar v), t):ps) =
              newSub = [(v, t)]
              nextPs = map (\(var,term) -> (var *! newSub, term *! newSub)) ps
              maybeTau = unif nextPs
-unif ((s@(TermFunc _ _), t):ps) = unif ((t,s):ps)
+unif ((s, t@(TermVar _)):ps) = unif ((t,s):ps)
 
