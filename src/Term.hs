@@ -17,7 +17,8 @@ module Term (
     (*!),
     (@@),
     UnifProblem,
-    unif
+    unif,
+    unify
 ) where
 
 import Data.Maybe
@@ -99,3 +100,27 @@ unif ((s@(TermVar v), t):ps) =
              maybeTau = unif nextPs
 unif ((s, t@(TermVar _)):ps) = unif ((t,s):ps)
 
+-- decomposed
+
+unify :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
+unify [] = Just identity
+unify ps = if or (map isFailCase ps) then Nothing else unify' ps
+             where
+               pps = filter (\(TermVar v, t) -> not (compareVar v t)) ps
+
+unify' :: (Eq v, Eq f) => UnifProblem v f -> Maybe (Substitution v f)
+unify' [] = Just identity
+unify' ((TermFunc _ ts1, TermFunc _ ts2):ps) = unify' (zip ts1 ts2 ++ ps)
+unify' ((s@(TermVar v), t):ps) =
+      if isNothing maybeTau then Nothing
+      else return $ fromJust maybeTau @@ newSub
+           where
+             newSub = [(v, t)]
+             nextPs = map (\(var,term) -> (var *! newSub, term *! newSub)) ps
+             maybeTau = unify' nextPs
+unify' ((s, t@(TermVar _)):ps) = unify' ((t,s):ps)
+
+isFailCase (s@(TermFunc _ _), t@(TermFunc _ _)) = (sig s !! 0) /= (sig t !! 0)
+isFailCase (TermVar v, t)                       = not (compareVar v t) &&
+                                                  elem v (variables t)
+isFailCase (s, t@(TermVar _))                   = isFailCase (t,s)
