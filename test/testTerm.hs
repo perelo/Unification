@@ -55,7 +55,7 @@ mainTest = do
         putStrLn $ "Testing (sigma @@ identity == sigma == identity @@ sigma)"
         quickCheck (testComposId        :: TSubstitution Char Char -> Bool)
 
-        putStrLn $ "Testing ((rho @@ sigma) @@ tau == rho @@ (tau @@ sigma))"
+        putStrLn $ "Testing ((rho @@ sigma) @@ tau == rho @@ (sigma @@ tau))"
         quickCheck (testComposAssoc     :: TSubstitution Char Char ->
                                            TSubstitution Char Char ->
                                            TSubstitution Char Char -> Bool)
