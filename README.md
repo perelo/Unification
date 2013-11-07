@@ -28,6 +28,7 @@ construire des objets de type `Term`.
 La fonction de composition se décompose en quatre étapes. Pour (sigma @@ tau)
 avec sigma = [ (x1,t1), ..., (xn,tn) ]
      tau   = [ (y1,s1), ..., (ym,sm) ]
+
 1. Appliquer sigma à tous les termes de tau.
    On obtient `[ (y1, s1 *! sigma), ..., (ym, sm *! sigma) ]`.
 2. Supprimer les termes redondants, ie. les termes où `yi == si *! sigma`.
